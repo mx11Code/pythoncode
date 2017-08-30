@@ -218,7 +218,7 @@ def generate_force_layout_configuration2():
     max_following = max(values_of_following)
     for user in followings_of_a_user.keys():
         followings_of_a_user[user] = int(40 + (followings_of_a_user[user] / max_following) * 40)
- 
+
     sql_links = """SELECT DISTINCT l.`from`, l.`to`, u.image FROM `links`  l 
                 INNER JOIN `users` u WHERE u.path = l.`from` ORDER BY l.`from`;"""
     cur.execute(sql_links)
