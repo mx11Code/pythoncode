@@ -113,21 +113,25 @@ def fetch_next_available():
     get_following(zhihu_id)
 
 
+from_list = []
+
+
 def to_map_dict():
     map_dict = {}
     index = 0
     sql_from = "SELECT `from` FROM `links`"
     cur.execute(sql_from)
-    for from_user in cur.fetchmany(200):
+    for from_user in cur.fetchall():
         from_name = from_user[0]
         if from_name not in map_dict:
+            from_list.append(from_name)
             map_dict[from_name] = index
             index += 1
             new_map_dict = map_dict.copy()
     for item in map_dict:
         sql_to = "SELECT `to` FROM `links` WHERE `from`= '%s'" % item
         cur.execute(sql_to)
-        for to_user in cur.fetchmany(21):
+        for to_user in cur.fetchall():
             to_name = to_user[0]
             if to_name not in new_map_dict:
                 new_map_dict[to_name] = index
@@ -135,17 +139,14 @@ def to_map_dict():
     return new_map_dict
 
 
-# print(to_map_dict())
-
-
 def generate_force_layout_configuration():
     new_map_dict = to_map_dict()
     layout = {
         "type": "force",
         "categories": [{
-            "name": "User",
+            "name": "user",
             "keyword": {},
-            "base": "HTMLElement"
+            "base": "user"
         }],
         "nodes": [],
         "links": []
@@ -175,15 +176,16 @@ def generate_force_layout_configuration():
     #     graph_link = {"source": source, "target": target}
     #     layout.get("links").append(graph_link)
     for name in new_map_dict.keys():
-        node = {"name": name, "value": 1, "category": 1}
+        node = {"name": name, "value": 1, "category": 0}
         layout.get("nodes").append(node)
-    sql_from = "SELECT `from` FROM `links`"
-    cur.execute(sql_from)
-    for from_user in cur.fetchmany(200):
-        from_name = from_user[0]
+    # sql_from = "SELECT `from` FROM `links`"
+    # cur.execute(sql_from)
+    # for from_user in cur.fetchall():
+    #     from_name = from_user[0]
+    for from_name in from_list:
         sql_to = "SELECT `to` FROM `links` WHERE `from`= '%s'" % from_name
         cur.execute(sql_to)
-        for to_user in cur.fetchmany(21):
+        for to_user in cur.fetchmany(10):
             to_name = to_user[0]
             source = new_map_dict[from_name]
             target = new_map_dict[to_name]
@@ -194,7 +196,82 @@ def generate_force_layout_configuration():
             layout.get("links").append(graph_link)
     with open(r"C:\Users\Administrator\Desktop\echarts\force.json", "w+", encoding="utf8") as f:
         f.write(json.dumps(layout))
-generate_force_layout_configuration()
+
+
+def generate_force_layout_configuration2():
+    map_node_to_seq = {}
+    used_links_from_a_node = {}
+    nodes_in_graphic = []
+    links_in_graphic = []
+
+    followings_of_a_user = {}
+
+    sql_counts = "SELECT `from`,count(`to`) AS following FROM `links` GROUP BY `from` ORDER BY `from`"
+    cur.execute(sql_counts)
+    for followings in cur.fetchall():
+        user = followings[0]
+        following_count = followings[1]
+        followings_of_a_user[user] = following_count
+
+    values_of_following = followings_of_a_user.values()
+    # min_following = min(values_of_following)
+    max_following = max(values_of_following)
+    for user in followings_of_a_user.keys():
+        followings_of_a_user[user] = int(40 + (followings_of_a_user[user] / max_following) * 40)
+
+    sql_links = """SELECT DISTINCT l.`from`, l.`to`, u.image FROM `links`  l 
+                INNER JOIN `users` u WHERE u.path = l.`from` ORDER BY l.`from`;"""
+    cur.execute(sql_links)
+    for link in cur.fetchall():
+        f = link[0]
+        t = link[1]
+        pic = link[2]
+
+        if f in used_links_from_a_node and used_links_from_a_node[f] >= 10:
+            continue
+
+        if f not in used_links_from_a_node:
+            used_links_from_a_node[f] = 0
+
+        if f not in map_node_to_seq:
+            nodes_in_graphic.append({
+                "name": f,
+                "symbol": "image://%s" % pic,
+                "symbolSize": followings_of_a_user[f],
+                "category": 0
+            })
+            map_node_to_seq[f] = len(nodes_in_graphic) - 1
+
+        if t not in map_node_to_seq:
+            nodes_in_graphic.append({
+                "name": t,
+                "symbolSize": followings_of_a_user[t] if t in followings_of_a_user else 1,
+                "category": 0
+            })
+            map_node_to_seq[t] = len(nodes_in_graphic) - 1
+
+        links_in_graphic.append({
+            "source": map_node_to_seq[f],
+            "target": map_node_to_seq[t]
+        })
+
+        used_links_from_a_node[f] += 1
+
+    layout = {
+        "type": "force",
+        "categories": [{
+            "name": "user",
+            "keyword": {},
+            "base": "user"
+        }],
+        "nodes": nodes_in_graphic,
+        "links": links_in_graphic
+    }
+    with open(r"C:\Users\Administrator\Desktop\echarts\force.json", "w+", encoding="utf8") as f:
+        f.write(json.dumps(layout))
+
+
+generate_force_layout_configuration2()
 #
 # for i in range(1, 1000):
 #     browser = webdriver.Chrome()
