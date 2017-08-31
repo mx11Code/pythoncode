@@ -113,89 +113,89 @@ def fetch_next_available():
     get_following(zhihu_id)
 
 
-from_list = []
+# from_list = []
 
 
-def to_map_dict():
-    map_dict = {}
-    index = 0
-    sql_from = "SELECT `from` FROM `links`"
-    cur.execute(sql_from)
-    for from_user in cur.fetchall():
-        from_name = from_user[0]
-        if from_name not in map_dict:
-            from_list.append(from_name)
-            map_dict[from_name] = index
-            index += 1
-            new_map_dict = map_dict.copy()
-    for item in map_dict:
-        sql_to = "SELECT `to` FROM `links` WHERE `from`= '%s'" % item
-        cur.execute(sql_to)
-        for to_user in cur.fetchall():
-            to_name = to_user[0]
-            if to_name not in new_map_dict:
-                new_map_dict[to_name] = index
-                index += 1
-    return new_map_dict
+# def to_map_dict():
+#     map_dict = {}
+#     index = 0
+#     sql_from = "SELECT `from` FROM `links`"
+#     cur.execute(sql_from)
+#     for from_user in cur.fetchall():
+#         from_name = from_user[0]
+#         if from_name not in map_dict:
+#             from_list.append(from_name)
+#             map_dict[from_name] = index
+#             index += 1
+#             new_map_dict = map_dict.copy()
+#     for item in map_dict:
+#         sql_to = "SELECT `to` FROM `links` WHERE `from`= '%s'" % item
+#         cur.execute(sql_to)
+#         for to_user in cur.fetchall():
+#             to_name = to_user[0]
+#             if to_name not in new_map_dict:
+#                 new_map_dict[to_name] = index
+#                 index += 1
+#     return new_map_dict
 
 
-def generate_force_layout_configuration():
-    new_map_dict = to_map_dict()
-    layout = {
-        "type": "force",
-        "categories": [{
-            "name": "user",
-            "keyword": {},
-            "base": "user"
-        }],
-        "nodes": [],
-        "links": []
-    }
-    # i = 0
-    # name_map_to_index = {}
-    #
-    # def add_to_map(user, i):
-    #     name_map_to_index[user] = i
-    #     i = i + 1
-    #     return i
-    #
-    # sql_user = "SELECT path FROM `users`"
-    # cur.execute(sql_user)
-    # for user in cur.fetchmany(10):
-    #     name = user[0]
-    #     node = {"name": name, "value": 1, "category": 1}
-    #     layout.get("nodes").append(node)
-    #     i = add_to_map(name, i)
-    #
-    # sql_links = "SELECT `from`, `to` FROM `links`"
-    # cur.execute(sql_links)
-    # for link in cur.fetchall():
-    #     source = name_map_to_index[link[0]]
-    #     target = name_map_to_index[link[1]]
-    #
-    #     graph_link = {"source": source, "target": target}
-    #     layout.get("links").append(graph_link)
-    for name in new_map_dict.keys():
-        node = {"name": name, "value": 1, "category": 0}
-        layout.get("nodes").append(node)
-    # sql_from = "SELECT `from` FROM `links`"
-    # cur.execute(sql_from)
-    # for from_user in cur.fetchall():
-    #     from_name = from_user[0]
-    for from_name in from_list:
-        sql_to = "SELECT `to` FROM `links` WHERE `from`= '%s'" % from_name
-        cur.execute(sql_to)
-        for to_user in cur.fetchmany(10):
-            to_name = to_user[0]
-            source = new_map_dict[from_name]
-            target = new_map_dict[to_name]
-
-            graph_link = {"source": source, "target": target}
-            if graph_link in layout.get("links"):
-                continue
-            layout.get("links").append(graph_link)
-    with open(r"C:\Users\Administrator\Desktop\echarts\force.json", "w+", encoding="utf8") as f:
-        f.write(json.dumps(layout))
+# def generate_force_layout_configuration():
+#     new_map_dict = to_map_dict()
+#     layout = {
+#         "type": "force",
+#         "categories": [{
+#             "name": "user",
+#             "keyword": {},
+#             "base": "user"
+#         }],
+#         "nodes": [],
+#         "links": []
+#     }
+#     # i = 0
+#     # name_map_to_index = {}
+#     #
+#     # def add_to_map(user, i):
+#     #     name_map_to_index[user] = i
+#     #     i = i + 1
+#     #     return i
+#     #
+#     # sql_user = "SELECT path FROM `users`"
+#     # cur.execute(sql_user)
+#     # for user in cur.fetchmany(10):
+#     #     name = user[0]
+#     #     node = {"name": name, "value": 1, "category": 1}
+#     #     layout.get("nodes").append(node)
+#     #     i = add_to_map(name, i)
+#     #
+#     # sql_links = "SELECT `from`, `to` FROM `links`"
+#     # cur.execute(sql_links)
+#     # for link in cur.fetchall():
+#     #     source = name_map_to_index[link[0]]
+#     #     target = name_map_to_index[link[1]]
+#     #
+#     #     graph_link = {"source": source, "target": target}
+#     #     layout.get("links").append(graph_link)
+#     for name in new_map_dict.keys():
+#         node = {"name": name, "value": 1, "category": 0}
+#         layout.get("nodes").append(node)
+#     # sql_from = "SELECT `from` FROM `links`"
+#     # cur.execute(sql_from)
+#     # for from_user in cur.fetchall():
+#     #     from_name = from_user[0]
+#     for from_name in from_list:
+#         sql_to = "SELECT `to` FROM `links` WHERE `from`= '%s'" % from_name
+#         cur.execute(sql_to)
+#         for to_user in cur.fetchmany(10):
+#             to_name = to_user[0]
+#             source = new_map_dict[from_name]
+#             target = new_map_dict[to_name]
+#
+#             graph_link = {"source": source, "target": target}
+#             if graph_link in layout.get("links"):
+#                 continue
+#             layout.get("links").append(graph_link)
+#     with open(r"C:\Users\Administrator\Desktop\echarts\force.json", "w+", encoding="utf8") as f:
+#         f.write(json.dumps(layout))
 
 
 def generate_force_layout_configuration2():
